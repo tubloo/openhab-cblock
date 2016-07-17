@@ -40,8 +40,8 @@ Group Home
 
 /*** GROUND FLOOR ***/
 Group   gF0 					(Home)
-Switch  gF0_SideEntry			"Side Entrance"			<lock> 		(gF0)	
-Contact gF0_MainDoor			"Main Door"				<frontdoor> (gF0)
+Switch  gF0_SideEntryGate		"Side Main Gate"		<lock> 		(gF0)	
+Switch	gF0_SideMainDoor		"Side Main Door"		<frontdoor> (gF0)
 Switch  gF0_StairCaseLight1		"Staircase Light One"	<light> 	(gF0, groundFloorLights)	
 
 
@@ -135,3 +135,8 @@ Group:Dimmer:OR(ON,OFF) terraceFloorFans 		"Terrace Fans [{%d}]"			<fan-ceiling>
 
 
 
+
+/*** DIAGNOSTICS ***/
+/*setup the nodemcu diagnostics stuff here */
+Group gDiag
+String nodemcu1 (gDiag)

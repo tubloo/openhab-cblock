@@ -16,8 +16,10 @@ sitemap home label="C-503 Chittaranjan Park"
 	Frame label="Home Vitals" {
 		Text item=levelBottomTank
 		Text item=levelTopTank
-		Text item=waterPump	
+		Text item=waterPump
 		Group item=homeTemp 
+		Switch item=gF0_SideEntryGate	
+		Switch item=gF0_SideMainDoor
 		Switch item=allLights label="Lights" mappings=[OFF="All Off", ON="All On"]
 		Group item=allLights
 	
@@ -29,6 +31,10 @@ sitemap home label="C-503 Chittaranjan Park"
 		Group item=gF2 label="Second Floor"
 		Group item=gF3 label="Third Floor" 
 		Group item=gF4 label="Terrace" 	 	
+	}
+	
+	Frame label="Diagnostics" {
+	 	Group item=gDiag label="System Modules"
 	}
 	
 }
