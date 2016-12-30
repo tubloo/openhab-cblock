@@ -1,142 +1,85 @@
-//Ref.: https://github.com/openhab/openhab/wiki/Explanation-of-items#syntax
-//itemtype itemname ["labeltext"] [<iconname>] [(group1, group2, ...)] [{bindingconfig}]
-//https://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html
+// Sanjoy Setup
 
-/*MQTT Topic Nomenclature
-topic name: home/<floor>/<room>/<electronic/sensor type>/<name/number>/<state/action>
-topic nam eis in all lowercase
-Ref.: 
-http://tinkerman.eldiariblau.net/mqtt-topic-naming-convention/
-http://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices 
-e.g:
-home/firstfloor/bedroom/light/bulb1/status
-home/groundfloor/outdoor/pump/action
-*/
+Group  demosan            "Sandbox"
+Switch Demo_LED           "LED"           (demosan)  {mqtt=">[mosquitto:c503/sensors/de/de/ledTest/write:command:OFF:0],>[mosquitto:c503/sensors/de/de/ledTest/write:command:ON:1]"}
+Number Demo_Distance     "Distance [%d]"  (demosan) {mqtt="<[mosquitto:c503/sensors/de/de/wlvTest:state:default]"}
+Switch Demo_TwoWaySwitch "Two Way Switch" (demosan) {mqtt=">[mosquitto:c503/sensors/de/de/twoTest/write:command:OFF:0],>[mosquitto:c503/sensors/de/de/twoTest/write:command:ON:1],<[mosquitto:c503/sensors/de/de/twoTest:state:MAP(onoffbinary.map)]"}
 
-/*** GENERIC ***/
+//String  Demo_PublishItem "[%s]" { mqtt=">[mosquitto:c503/demo:command:*:default]" }
 
-	/* CURRENT DATE TIME (NTP) */
-	DateTime CurrentDate  "Date [%1$tA, %1$te %1$tb '%1$ty - %1$tl:%1$tM %1$tp ]"  {channel="ntp:ntp:local:dateTime" }
+//Demo - Virtual Items
+Number gfWaterLevel    "Virtual Water GF Level [%.0f%%]" <cistern> (demosan)
+Number gfWaterLevelRaw "Raw Water GF Level [%d]"         <cistern> (demosan) {mqtt="<[mosquitto:c503/sensors/de/de/gfWaterLevel:state:default]"}
+Number ohWaterLevel    "Virtual Water OH Level [%.0f%%]" <cistern> (demosan)
+Number ohWaterLevelRaw "Raw Water OH Level [%d]"         <cistern> (demosan) {mqtt="<[mosquitto:c503/sensors/de/de/ohWaterLevel:state:default]"}
 
-	/* WEATHER (YAHOO) */
-	Number Weather_Temperature 	"Temperature"	{channel="yahooweather:weather:7fd63be5:temperature"}
-	Number Weather_Humidity 	"Humidity"		{channel="yahooweather:weather:7fd63be5:humidity"}
-	Number Weather_Pressure 	"Pressure"		{channel="yahooweather:weather:7fd63be5:pressure"}
-	
-	/* ASTRONOMICA */
-	Group	astronimca
-	DateTime Sunrise_Time  "Sunrise [%1$tl:%1$tM %1$tp]"  	<sunrise> (astronimca) {channel="astro:sun:local:rise#start"}
-	DateTime Sunset_Time  "Sunset [%1$tl:%1$tM %1$tp]"		<sunset> (stronimca) {channel="astro:sun:local:set#start"}
-	
-	/* WATER TANK & PUMP */
-	Number levelBottomTank		"Underground Tank"	<cistern> 	{mqtt="<[mosquitto:home/gf0/outdoor/tanklevel:state:default]"}
-	Number levelTopTank			"Terrace Tank"		<cistern> 	{mqtt="<[mosquitto:home/gf3/outdoor/tanklevel:state:default]"}
-	Switch waterPump 			"Water Pump"		<siren>		{mqtt="<[mosquitto:home/gf0/outdoor/waterpump:state:MAP(en.map)],>[mosquitto:home/gf0/outdoor/waterpump:command:ON:ON],>[mosquitto:home/gf0/outdoor/waterpump:command:OFF:OFF]"}
+Switch gfPump          "GF Pump"           (demosan)
+Switch ohPump          "OH Pump"           (demosan)
+Switch Pump_Test       "Pump Test"         (demosan)
+Number chartingPeriod  "Chart Period [%s]" (demosan)
 
 
+//Floor Group
+Switch gfMainDoor      "Main Door Open"     <frontdoor> (gFirstFloor,gSecondFloor) {mqtt=">[mosquitto:c503/sensors/sf/lb/buzMainDoor/write:command:OFF:0],>[mosquitto:c503/sensors/sf/lb/buzMainDoor/write:command:ON:1]"}
+Group  gFirstFloor    "First Floor"                    <groundfloor>
+Switch ffMainPump     "FF Mains Pump"                                   (gFirstFloor) 
+Number ffUGWaterLevel "FF Lower Tank Level [%0.0f%%]"  <cistern>        (gFirstFloor)  
+Number ffOHWaterLevel "FF Upper Tank Level [%0.0f%%]"  <cistern>        (gFirstFloor)
+Switch ffOverheadPump "FF Overhead Pump"                                (gFirstFloor) 
 
-Group Home
+Number ffUGWaterLevelRaw "FF Lower Tank Level RAW"   <cistern> 
+Number ffOHWaterLevelRaw "FF Upper Tank Level RAW"   <cistern>
 
+Group  gSecondFloor "Second Floor"  <firstfloor>
+Switch sfMainPump   "SF Mains Pump" (gSecondFloor) {mqtt=">[mosquitto:c503/sensors/sf/na/elsSFMainPump/write:command:OFF:0],>[mosquitto:c503/sensors/sf/na/elsSFMainPump/write:command:ON:1]"}
+Number sfUGWaterLevel  "SF Lower Tank Level [%0.0f%%]"  <cistern>  (gSecondFloor) {mqtt="<[mosquitto:c503/sf/na/wlvUGWaterLevel:state:default]"} 
+Switch  sfOverheadPump "SF Overhead Pump"         (gSecondFloor) {mqtt=">[mosquitto:c503/sensors/sf/na/elsSFOverheadPump/write:command:OFF:0],>[mosquitto:c503/sensors/sf/na/elsSFOverheadPump/write:command:ON:1]"}
+Number sfOHWaterLevel  "SF Upper Tank Level [%0.0f%%]"  <cistern>  (gSecondFloor) 
 
-/*** GROUND FLOOR ***/
-Group   gF0 					(Home)
-Switch  gF0_SideEntryGate		"Side Main Gate"		<lock> 		(gF0)	
-Switch	gF0_SideMainDoor		"Side Main Door"		<frontdoor> (gF0)
-Switch  gF0_StairCaseLight1		"Staircase Light One"	<light> 	(gF0, groundFloorLights)	
+Number sfUGWaterLevelRaw "SF Lower Tank Level RAW"   
+Number sfOHWaterLevelRaw "SF Upper Tank Level RAW"   
 
+Group  gThirdFloor  "Third Floor" <terrace>
 
+// System Modules Group
+// Add a group for every controller that is deployed
+Group Modules   "All the System Modules"     <settings>
+Group g13944339 "13944339 - SF Main Door"    <shield>  (Modules)
+Group g16042231 "16042231 - SF Pump Switch"  <shield>  (Modules)
 
-/*** FIRST FLOOR ***/
-Group gF1 												(Home)
+// ** Main Door ** //
+// **** 13944339 START *****//
+String Sensor_13944339_Status "Status [%s]" <keyring> (g13944339) {mqtt="<[mosquitto:c503/system/13944339/status/msg:state:default]"}
 
-	/* FIRST FLOOR ROOMS */
-		
-	Group  gF1_MainBalcony			"Balcony"			<terrace>	(gF1)
-	Switch gF1_MainBalcony_Light1 	"Light One"			<light>		(gF1_MainBalcony, firstfloorLights) {mqtt="<[mosquitto:home/gf1/mainbalcony/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/mainbalcony/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/mainbalcony/light/bulb1:command:OFF:OFF]"}			
-	Switch gF1_MainBalcony_Light2 	"Light Two"			<light>		(gF1_MainBalcony, firstfloorLights) {mqtt="<[mosquitto:home/gf1/mainbalcony/light/bulb2:state:MAP(en.map)],>[mosquitto:home/gf1/mainbalcony/light/bulb2:command:ON:ON],>[mosquitto:home/gf1/mainbalcony/light/bulb2:command:OFF:OFF]"}			
+Switch Sensor_13944339_Enabled "Chip Enabled" <light> (g13944339) {mqtt=">[mosquitto:c503/system/13944339:command:OFF:disable],>[mosquitto:c503/system/13944339:command:ON:enable],<[mosquitto:c503/system/13944339/status/enabled:state:default]"}
 
-	Group  gF1_LivingRoom			"Living Room"			<sofa>			(gF1)		
-	Number gF1_LivingRoom_Temp 		"Temperature [%.2f °C]" <temperature> 	(gF1_LivingRoom, firstFloorTemp) {mqtt="<[mosquitto:home/gf1/livingroom/temperature:state:default]"}
-	Switch gF1_LivingRoom_Light1 	"Light One"				<light> 		(gF1_LivingRoom, firstFloorLights) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}			
-	Dimmer gF1_LivingRoom_Fan1 		"Fan One"				<fan-ceiling> 	(gF1_LivingRoom, firstFloorFans) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}			
+String Sensor_13944339_IP  "IP [%s]"  <settings> (g13944339) {mqtt="<[mosquitto:c503/system/13944339/status/ip:state:default]"}
 
-	Group  gF1_Kitchen				"Kitchen"				<kitchen>		(gF1)		
-	Number gF1_Kitchen_Temp 		"Temperature [%.2f °C]" <temperature> 	(gF1_Kitchen, firstFloorTemp) {mqtt="<[mosquitto:home/gf1/livingroom/temperature:state:default]"}
-	Switch gF1_Kitchen_Light1 		"Light One"				<light> 		(gF1_Kitchen, firstFloorLights) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}			
-	Switch gF1_Kitchen_Exhaust 		"Exhaust"				<fan-ceiling> 	(gF1_Kitchen) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(ONOFF.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}
+String Sensor_13944339_Msg_Time "Msg Time [%s]" <clock> (g13944339) {mqtt="<[mosquitto:c503/system/13944339/status/statustime:state:default]"}
 
-	Group  gF1_MasterBedRoom		"Master Bedroom"		<bedroom>		(gF1)		
-	Number gF1_MasterBedRoom_Temp 	"Temperature [%.2f °C]" <temperature> 	(gF1_MasterBedRoom, firstFloorTemp) {mqtt="<[mosquitto:home/gf1/livingroom/temperature:state:default]"}
-	Switch gF1_MasterBedRoom_Light1 "Light One"				<light> 		(gF1_MasterBedRoom, firstFloorLights) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}			
-	Dimmer gF1_MasterBedRoom_Fan1 	"Fan One"				<fan-ceiling> 	(gF1_MasterBedRoom, firstFloorFans) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}			
+Switch Sensor_13944339_OLED  "OLED Enabled" <light> (g13944339) {mqtt=">[mosquitto:c503/system/13944339:command:OFF:oled-disable],>[mosquitto:c503/system/13944339:command:ON:oled-enable],<[mosquitto:c503/system/13944339/status/oled:state:default]"}
 
-		Group  gF1_BathRoom1			"Bathroom"				<bathroom>		(gF1_MasterBedRoom)		
-		Switch gF1_BathRoom1_Light1 	"Light One"				<light> 		(gF1_BathRoom1, firstFloorLights) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}
-		Switch gF1_BathRoom1_Light2 	"Light Two"				<light> 		(gF1_BathRoom1, firstFloorLights) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}
-		Switch gF1_BathRoom1_Geyser 	"Geyser"				<heating> 		(gF1_BathRoom1) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}
-		Switch gF1_BathRoom1_Exhaust 	"Exhaust"				<fan-ceiling> 	(gF1_BathRoom1) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}
+Switch Sensor_13944339_DEBUG  "Debug Enabled" <status> (g13944339) {mqtt=">[mosquitto:c503/system/13944339:command:OFF:debug-off],>[mosquitto:c503/system/13944339:command:ON:debug-on],<[mosquitto:c503/system/13944339/status/debug:state:default]"}
 
-	
-	Group  gF1_OtherBedRoom			"Tubloo Bedroom"		<bedroom>		(gF1)		
-	Number gF1_OtherBedRoom_Temp 	"Temperature [%.2f °C]" <temperature> 	(gF1_OtherBedRoom, firstFloorTemp) {mqtt="<[mosquitto:home/gf1/livingroom/temperature:state:default]"}
-	Switch gF1_OtherBedRoom_Light1 	"Light One"				<light> 		(gF1_OtherBedRoom, firstFloorLights) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}			
-	Dimmer gF1_OtherBedRoom_Fan1 	"Fan One"				<fan-ceiling> 	(gF1_OtherBedRoom, firstFloorFans) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}			
+String Sensor_13944339_DeepSleep  "Deep Sleep [%s]" <bedroom_blue> (g13944339) {mqtt="<[mosquitto:c503/system/13944339/status/deepsleep:state:default]"}
 
-		Group  gF1_BathRoom2			"Bathroom"				<bedroom>		(gF1_OtherBedRoom)		
-		Switch gF1_BathRoom2_Light1 	"Light One"				<light> 		(gF1_BathRoom2, firstFloorLights) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}
-		Switch gF1_BathRoom2_Light2 	"Light Two"				<light> 		(gF1_BathRoom2, firstFloorLights) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(ONOFF.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}
-		Switch gF1_BathRoom2_Geyser 	"Geyser"				<heating> 		(gF1_BathRoom2) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}
-		Switch gF1_BathRoom2_Exhaust 	"Exhaust"				<fan-ceiling> 	(gF1_BathRoom2) {mqtt="<[mosquitto:home/gf1/livingroom/light/bulb1:state:MAP(en.map)],>[mosquitto:home/gf1/livingroom/light/bulb1:command:ON:ON],>[mosquitto:home/gf1/livingroom/light/bulb1:command:OFF:OFF]"}
+// **** 13944339 END *****//
 
+// ** SF Pump Switch Control **/
+// **** 16042231 START *****//
+String Sensor_16042231_Status "Status [%s]" <keyring> (g16042231) {mqtt="<[mosquitto:c503/system/16042231/status/msg:state:default]"}
 
+Switch Sensor_16042231_Enabled "Chip Enabled" <light> (g16042231) {mqtt=">[mosquitto:c503/system/16042231:command:OFF:disable],>[mosquitto:c503/system/16042231:command:ON:enable],<[mosquitto:c503/system/16042231/status/enabled:state:default]"}
 
-/*** SECOND FLOOR ***/
-Group gF2 												(Home)
+String Sensor_16042231_IP  "IP [%s]"  <settings> (g16042231) {mqtt="<[mosquitto:c503/system/16042231/status/ip:state:default]"}
 
-	/* SECOND FLOOR ROOMS */
-	Group gF2_MainBalcony	"Balcony"			<terrace>	(gF2)
-	Group gF2_LivingRoom	"Living Room"		<sofa>		(gF2)
-	
-	Switch gF2_MainBalcony_Light1 	"Light One"				<light> (gF2_MainBalcony, secondfloorLights) {mqtt="<[mosquitto:home/gf2/mainbalcony/light/bulb1:state:MAP(ONOFF.map)],>[mosquitto:home/gf2/mainbalcony/light/bulb1:command:ON:ON],>[mosquitto:home/gf2/mainbalcony/light/bulb1:command:OFF:OFF]"}			
-	
-	Number gF2_Temp 				"Temperature [%.2f °C]" <temperature> (gF2_LivingRoom, secondFloorTemp) {mqtt="<[mosquitto:home/gf2/livingroom/temperature:state:default]"}
+String Sensor_16042231_Msg_Time "Msg Time [%s]" <clock> (g16042231) {mqtt="<[mosquitto:c503/system/16042231/status/statustime:state:default]"}
 
+Switch Sensor_16042231_OLED  "OLED Enabled" <light> (g16042231) {mqtt=">[mosquitto:c503/system/16042231:command:OFF:oled-disable],>[mosquitto:c503/system/16042231:command:ON:oled-enable],<[mosquitto:c503/system/16042231/status/oled:state:default]"}
 
-/*** THIRD FLOOR ***/
-Group  gF3 												(Home)	
+Switch Sensor_16042231_DEBUG  "Debug Enabled" <status> (g16042231) {mqtt=">[mosquitto:c503/system/16042231:command:OFF:debug-off],>[mosquitto:c503/system/16042231:command:ON:debug-on],<[mosquitto:c503/system/16042231/status/debug:state:default]"}
 
-	/* THIRD FLOOR ROOMS */
-	
-/*** TERRACE ***/
-Group  gF4 												<terrace> (Home)	
+String Sensor_16042231_DeepSleep  "Deep Sleep [%s]" <bedroom_blue> (g16042231) {mqtt="<[mosquitto:c503/system/16042231/status/deepsleep:state:default]"}
 
+// **** 16042231 END *****//
 
-
-/*** Group Setup ***/
-Group:Number:AVG homeTemp						"Avg. Home Temp. [%.1f °C]"				<temperature>
-Group:Number:AVG groundFloorTemp				"Avg. Second Floor Temp. [%.1f °C]"		<temperature> (homeTemp)
-Group:Number:AVG firstFloorTemp					"Avg. First Floor Temp. [%.1f °C]"		<temperature> (homeTemp)
-Group:Number:AVG secondFloorTemp				"Avg. Second Floor Temp. [%.1f °C]"		<temperature> (homeTemp)
-Group:Number:AVG thirdFloorTemp					"Avg. Third Floor Temp. [%.1f °C]"		<temperature> (homeTemp)
-
-Group:Switch:OR(ON,OFF) allLights 				"All Lights [{%d}]"				<light>
-Group:Switch:OR(ON,OFF) groundFloorLights 		"Ground Floor Lights [{%d}]"	<light> (allLights)
-Group:Switch:OR(ON,OFF) firstFloorLights 		"First Floor Lights [{%d}]"		<light> (allLights)	
-Group:Switch:OR(ON,OFF) secondFloorLights 		"Second Floor Lights [{%d}]"	<light> (allLights)
-Group:Switch:OR(ON,OFF) thirdFloorLights 		"Third Floor Lights [{%d}]"		<light> (allLights)
-Group:Switch:OR(ON,OFF) terraceFloorLights 		"Terrace Lights [{%d}]"			<light> (allLights)
-
-Group:Dimmer:OR(ON,OFF) allFans 				"All Fans [{%d}]"				<fan-ceiling>
-Group:Dimmer:OR(ON,OFF) groundFloorFans 		"Ground Floor Fans [{%d}]"		<fan-ceiling> (allFans)
-Group:Dimmer:OR(ON,OFF) firstFloorFans 			"First Floor Fans [{%d}]"		<fan-ceiling> (allFans)	
-Group:Dimmer:OR(ON,OFF) secondFloorFans 		"Second Floor Fans [{%d}]"		<fan-ceiling> (allFans)
-Group:Dimmer:OR(ON,OFF) thirdFloorFans 			"Third Floor Fans [{%d}]"		<fan-ceiling> (allFans)
-Group:Dimmer:OR(ON,OFF) terraceFloorFans 		"Terrace Fans [{%d}]"			<fan-ceiling> (allFans)
-
-
-
-
-/*** DIAGNOSTICS ***/
-/*setup the nodemcu diagnostics stuff here */
-Group gDiag
-String nodemcu1 (gDiag)
